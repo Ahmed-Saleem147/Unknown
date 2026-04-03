@@ -32,7 +32,28 @@
   // --- SQUAD ---
   const squadEl = document.getElementById('dynamic-squad');
   if (squadEl) {
-    const squad = getData('squad', []);
+    const DEFAULT_SQUAD = [
+      { name: 'Andy Johnfiah',       photo: '' },
+      { name: 'Lord Ayamga',         photo: '' },
+      { name: 'Thomas Partey',       photo: '' },
+      { name: 'Prince Bonney',       photo: '' },
+      { name: 'Gilbert Selasi',      photo: '' },
+      { name: 'André Lamar Ayebo',   photo: '' },
+      { name: 'Asiedu Samuel',       photo: '' },
+      { name: 'Divassa Amartey',     photo: '' },
+      { name: 'Agala Derick Kwame',  photo: '' },
+      { name: 'Luqman Said',         photo: '' },
+      { name: 'Frank Arhin Issachar',photo: '' },
+      { name: 'Abdul Sadat Smart',   photo: '' },
+      { name: 'Ahmed Saleem',        photo: '' },
+      { name: 'Godson Emmanuel',     photo: '' },
+      { name: 'Benjamin Nii Odai',   photo: '' },
+      { name: 'Kumi Francis',        photo: '' },
+      { name: 'Jakes Kyei',          photo: '' },
+      { name: 'Abdul Majeed Idrissa',photo: '' },
+      { name: 'Lumor Drachma',       photo: '' },
+    ];
+    const squad = getData('squad', DEFAULT_SQUAD);
     if (squad.length > 0) {
       squadEl.innerHTML = squad.map((p, i) => {
         const hasPhoto = p.photo && p.photo.trim() !== '';

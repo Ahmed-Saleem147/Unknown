@@ -177,13 +177,14 @@
         <div class="section-header">
           <div>
             <h2>Squad Management</h2>
-            <p>Edit player names and positions.</p>
+            <p>Add, edit or remove players. Upload individual player photos.</p>
           </div>
+          <button class="add-btn" onclick="openAddPlayer()"><i class="fas fa-user-plus"></i> Add Player</button>
         </div>
         <div class="table-wrap">
           <table class="admin-table">
             <thead>
-              <tr><th>#</th><th>Photo</th><th>Name</th><th>Position</th><th style="width:80px;">Edit</th></tr>
+              <tr><th>#</th><th>Photo</th><th>Name</th><th>Position</th><th style="width:100px;">Actions</th></tr>
             </thead>
             <tbody id="squadTable"></tbody>
           </table>

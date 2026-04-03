@@ -2,6 +2,165 @@
    UNKNOWN FC — MAIN JAVASCRIPT
    ============================================ */
 
+// ============================================
+// DYNAMIC CONTENT — reads from localStorage
+// (managed via admin.html)
+// ============================================
+(function loadDynamicContent() {
+  function getData(key, fallback) {
+    try { const r = localStorage.getItem('ufc_' + key); return r ? JSON.parse(r) : fallback; }
+    catch { return fallback; }
+  }
+
+  // --- NEWS ---
+  const newsEl = document.getElementById('dynamic-news');
+  if (newsEl) {
+    const news = getData('news', []);
+    if (news.length > 0) {
+      newsEl.innerHTML = news.slice(0, 4).map(n => {
+        const d = new Date(n.date);
+        const dateStr = isNaN(d) ? n.date : d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+        return `<div class="news-item">
+          <div class="news-date"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
+          <h4><a href="#">${n.title}</a></h4>
+          <p>${n.excerpt}</p>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // --- SQUAD ---
+  const squadEl = document.getElementById('dynamic-squad');
+  if (squadEl) {
+    const squad = getData('squad', []);
+    if (squad.length > 0) {
+      squadEl.innerHTML = squad.map(p => {
+        const hasPhoto = p.photo && p.photo.trim() !== '';
+        return `<div class="player-card reveal">
+          <div class="player-avatar-wrap">
+            ${hasPhoto
+              ? `<img src="${p.photo}" alt="${p.name}" class="player-avatar-img" />`
+              : `<div class="player-avatar-placeholder"><i class="fas fa-user"></i></div>`
+            }
+          </div>
+          <div class="player-info">
+            <h4>${p.name}</h4>
+          </div>
+        </div>`;
+      }).join('');
+      // Re-run reveal observer on new elements
+      document.querySelectorAll('#dynamic-squad .reveal').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(40px)';
+      });
+    }
+  }
+
+  // --- FIXTURES ---
+  const fixEl = document.getElementById('dynamic-fixtures');
+  if (fixEl) {
+    const fixtures = getData('fixtures', []);
+    if (fixtures.length > 0) {
+      fixEl.innerHTML = fixtures.map(f => {
+        const isPast = f.status !== 'upcoming';
+        const vsClass = isPast ? 'fixture-vs score' : 'fixture-vs';
+        const vsContent = isPast && f.score ? f.score : 'VS';
+        const statusLabel = f.status === 'upcoming' ? 'Upcoming'
+          : f.status.charAt(0).toUpperCase() + f.status.slice(1);
+        return `<div class="fixture-item ${isPast ? 'past' : ''} reveal">
+          <div class="fixture-date">
+            <span class="fix-day">${f.day}</span>
+            <span class="fix-month">${f.month}</span>
+          </div>
+          <div class="fixture-teams">
+            <span class="home-team">${f.homeTeam}</span>
+            <div class="${vsClass}"><span>${vsContent}</span></div>
+            <span class="away-team">${f.awayTeam}</span>
+          </div>
+          <div class="fixture-info">
+            <span><i class="fas fa-clock"></i> ${f.time}</span>
+            <span><i class="fas fa-map-marker-alt"></i> ${f.venue}</span>
+          </div>
+          <div class="fixture-status ${f.status}">${statusLabel}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // --- SPONSORS ---
+  const sponsorsEl = document.getElementById('dynamic-sponsors');
+  if (sponsorsEl) {
+    const sponsors = getData('sponsors', []);
+    if (sponsors.length > 0) {
+      // Duplicate for seamless loop
+      const doubled = [...sponsors, ...sponsors];
+      sponsorsEl.innerHTML = doubled.map(s =>
+        `<div class="swiper-slide sponsor-slide"><div class="sponsor-logo">${s.name}</div></div>`
+      ).join('');
+    }
+  }
+
+  // --- CONTACT ---
+  const contactEl = document.getElementById('dynamic-contact');
+  if (contactEl) {
+    const s = getData('settings', {
+      phone1: '020 912 6842', phone2: '053 774 8210',
+      email: 'unknownfootballclub7@gmail.com',
+      instagram: 'unknownfcboys', tiktok: 'unknownfcboys'
+    });
+    contactEl.innerHTML = `
+      <h3>Reach Us Directly</h3>
+      <div class="contact-item">
+        <div class="contact-icon"><i class="fas fa-phone"></i></div>
+        <div>
+          <strong>Phone Numbers</strong>
+          <p>${s.phone1 || ''}</p>
+          <p>${s.phone2 || ''}</p>
+        </div>
+      </div>
+      ${s.email ? `<div class="contact-item">
+        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+        <div>
+          <strong>Email</strong>
+          <p><a href="mailto:${s.email}">${s.email}</a></p>
+        </div>
+      </div>` : ''}
+      <div class="contact-item">
+        <div class="contact-icon"><i class="fab fa-instagram"></i></div>
+        <div>
+          <strong>Instagram</strong>
+          <p><a href="https://www.instagram.com/${s.instagram}" target="_blank">@${s.instagram}</a></p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon"><i class="fab fa-tiktok"></i></div>
+        <div>
+          <strong>TikTok</strong>
+          <p><a href="https://www.tiktok.com/@${s.tiktok}" target="_blank">@${s.tiktok}</a></p>
+        </div>
+      </div>
+      <div class="contact-socials">
+        <a href="https://www.instagram.com/${s.instagram}" target="_blank" class="social-btn"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.tiktok.com/@${s.tiktok}" target="_blank" class="social-btn"><i class="fab fa-tiktok"></i></a>
+        <a href="mailto:${s.email || ''}" class="social-btn"><i class="fas fa-envelope"></i></a>
+        <a href="tel:${(s.phone1 || '').replace(/\s/g,'')}" class="social-btn"><i class="fas fa-phone"></i></a>
+      </div>
+    `;
+
+    // Update footer contact info too
+    const footerInfo = document.getElementById('footer-contact-info');
+    if (footerInfo) {
+      footerInfo.innerHTML = `
+        <p><i class="fas fa-phone"></i> ${s.phone1 || ''}</p>
+        <p><i class="fas fa-phone"></i> ${s.phone2 || ''}</p>
+        ${s.email ? `<p><i class="fas fa-envelope"></i> ${s.email}</p>` : ''}
+        <p><i class="fab fa-instagram"></i> @${s.instagram}</p>
+        <p><i class="fab fa-tiktok"></i> @${s.tiktok}</p>
+      `;
+    }
+  }
+})();
+
 // ---- NAVBAR: Solid on scroll ----
 const navbar = document.getElementById('navbar');
 const navLinks = document.querySelectorAll('.nav-link');

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — Unknown FC</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- ===== LOGIN SCREEN ===== -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <img src="logo.png" alt="Unknown FC" class="login-logo" />
+      <h1>UNKNOWN <span>FC</span></h1>
+      <p>Admin Portal</p>
+      <form id="loginForm">
+        <div class="login-field">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="loginPassword" placeholder="Enter admin password" autocomplete="current-password" />
+          <button type="button" id="togglePw"><i class="fas fa-eye"></i></button>
+        </div>
+        <button type="submit" class="login-btn">Login <i class="fas fa-arrow-right"></i></button>
+        <p class="login-hint">Default password: <code>unknownfc2026</code></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN DASHBOARD ===== -->
+  <div class="admin-wrap" id="adminWrap" style="display:none;">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <img src="logo.png" alt="Unknown FC" />
+        <div>
+          <span>UNKNOWN FC</span>
+          <small>Admin Panel</small>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="dashboard"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="#" class="nav-item" data-section="news"><i class="fas fa-newspaper"></i> News</a>
+        <a href="#" class="nav-item" data-section="fixtures"><i class="fas fa-futbol"></i> Fixtures</a>
+        <a href="#" class="nav-item" data-section="squad"><i class="fas fa-users"></i> Squad</a>
+        <a href="#" class="nav-item" data-section="sponsors"><i class="fas fa-handshake"></i> Sponsors</a>
+        <a href="#" class="nav-item" data-section="settings"><i class="fas fa-cog"></i> Settings</a>
+      </nav>
+      <a href="#" class="sidebar-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-content">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="topbar-right">
+          <a href="index.html" target="_blank" class="view-site-btn"><i class="fas fa-external-link-alt"></i> View Site</a>
+          <div class="admin-avatar">A</div>
+        </div>
+      </header>
+
+      <!-- Toast -->
+      <div class="toast" id="toast"></div>
+
+      <!-- Modal -->
+      <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+          <div class="modal-header">
+            <h3 id="modalTitle">Edit</h3>
+            <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body" id="modalBody"></div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: DASHBOARD ===== -->
+      <section class="section active" id="section-dashboard">
+        <div class="section-header">
+          <h2>Welcome back, Admin</h2>
+          <p>Manage all content for the Unknown FC website from here.</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-newspaper"></i></div>
+            <div class="stat-info">
+              <div class="stat-num" id="stat-news">0</div>
+              <div class="stat-label">News Articles</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-futbol"></i></div>
+            <div class="stat-info">
+              <div class="stat-num" id="stat-fixtures">0</div>
+              <div class="stat-label">Fixtures</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+              <div class="stat-num" id="stat-squad">0</div>
+              <div class="stat-label">Squad Players</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+            <div class="stat-info">
+              <div class="stat-num" id="stat-sponsors">0</div>
+              <div class="stat-label">Sponsors</div>
+            </div>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <h3>Quick Actions</h3>
+          <div class="action-btns">
+            <button class="action-btn" onclick="switchSection('news'); openAddNews()"><i class="fas fa-plus"></i> Add News</button>
+            <button class="action-btn" onclick="switchSection('fixtures'); openAddFixture()"><i class="fas fa-plus"></i> Add Fixture</button>
+            <button class="action-btn" onclick="switchSection('squad')"><i class="fas fa-users"></i> Edit Squad</button>
+            <button class="action-btn" onclick="switchSection('settings')"><i class="fas fa-cog"></i> Settings</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SECTION: NEWS ===== -->
+      <section class="section" id="section-news">
+        <div class="section-header">
+          <div>
+            <h2>News Management</h2>
+            <p>Add, edit or delete news articles shown on the website.</p>
+          </div>
+          <button class="add-btn" onclick="openAddNews()"><i class="fas fa-plus"></i> Add News</button>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Date</th><th>Title</th><th>Excerpt</th><th style="width:120px;">Actions</th></tr>
+            </thead>
+            <tbody id="newsTable"></tbody>
+          </table>
+          <div class="empty-state" id="newsEmpty" style="display:none;">
+            <i class="fas fa-newspaper"></i>
+            <p>No news articles yet. Add your first one!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SECTION: FIXTURES ===== -->
+      <section class="section" id="section-fixtures">
+        <div class="section-header">
+          <div>
+            <h2>Fixtures & Results</h2>
+            <p>Manage upcoming fixtures and past match results.</p>
+          </div>
+          <button class="add-btn" onclick="openAddFixture()"><i class="fas fa-plus"></i> Add Fixture</button>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Date</th><th>Home</th><th>Away</th><th>Venue</th><th>Status</th><th style="width:120px;">Actions</th></tr>
+            </thead>
+            <tbody id="fixturesTable"></tbody>
+          </table>
+          <div class="empty-state" id="fixturesEmpty" style="display:none;">
+            <i class="fas fa-futbol"></i>
+            <p>No fixtures yet. Add your first one!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SECTION: SQUAD ===== -->
+      <section class="section" id="section-squad">
+        <div class="section-header">
+          <div>
+            <h2>Squad Management</h2>
+            <p>Edit player names and positions.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>#</th><th>Photo</th><th>Name</th><th>Position</th><th style="width:80px;">Edit</th></tr>
+            </thead>
+            <tbody id="squadTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== SECTION: SPONSORS ===== -->
+      <section class="section" id="section-sponsors">
+        <div class="section-header">
+          <div>
+            <h2>Sponsors</h2>
+            <p>Manage the club's sponsors displayed in the slider.</p>
+          </div>
+          <button class="add-btn" onclick="openAddSponsor()"><i class="fas fa-plus"></i> Add Sponsor</button>
+        </div>
+        <div class="sponsors-admin-list" id="sponsorsList"></div>
+      </section>
+
+      <!-- ===== SECTION: SETTINGS ===== -->
+      <section class="section" id="section-settings">
+        <div class="section-header">
+          <h2>Club Settings</h2>
+          <p>Update club contact information and social media links.</p>
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3><i class="fas fa-phone"></i> Contact Info</h3>
+            <form id="contactSettingsForm">
+              <div class="form-group">
+                <label>Phone Number 1</label>
+                <input type="text" id="set-phone1" placeholder="e.g. 020 912 6842" />
+              </div>
+              <div class="form-group">
+                <label>Phone Number 2</label>
+                <input type="text" id="set-phone2" placeholder="e.g. 053 774 8210" />
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="set-email" placeholder="e.g. unknownfootballclub7@gmail.com" />
+              </div>
+              <div class="form-group">
+                <label>Instagram Handle</label>
+                <div class="input-prefix"><span>@</span><input type="text" id="set-instagram" placeholder="unknownfcboys" /></div>
+              </div>
+              <div class="form-group">
+                <label>TikTok Handle</label>
+                <div class="input-prefix"><span>@</span><input type="text" id="set-tiktok" placeholder="unknownfcboys" /></div>
+              </div>
+              <button type="submit" class="save-btn"><i class="fas fa-save"></i> Save Contact Info</button>
+            </form>
+          </div>
+          <div class="settings-card">
+            <h3><i class="fas fa-lock"></i> Change Password</h3>
+            <form id="passwordForm">
+              <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" id="set-current-pw" placeholder="Current password" />
+              </div>
+              <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="set-new-pw" placeholder="New password" />
+              </div>
+              <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="set-confirm-pw" placeholder="Confirm new password" />
+              </div>
+              <button type="submit" class="save-btn"><i class="fas fa-key"></i> Update Password</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

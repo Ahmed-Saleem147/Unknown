@@ -112,6 +112,27 @@
     }
   }
 
+  // --- GALLERY ---
+  const galleryEl = document.getElementById('dynamic-gallery');
+  if (galleryEl) {
+    const DEFAULT_GALLERY = [
+      'photo1.jpeg','photo2.jpeg','photo3.jpeg','photo12.jpeg','photo13.jpeg',
+      'photo14.jpeg','photo4.jpeg','photo15.jpeg','photo16.jpeg','photo5.jpeg',
+      'photo17.jpeg','photo18.jpeg','photo6.jpeg','photo19.jpeg','photo20.jpeg',
+      'photo7.jpeg','photo21.jpeg','photo8.jpeg','photo22.jpeg','photo9.jpeg',
+      'photo10.jpeg','photo23.jpeg','photo11.jpeg'
+    ].map((src, i) => ({ id: i + 1, src }));
+
+    const gallery = getData('gallery', DEFAULT_GALLERY);
+    galleryEl.innerHTML = gallery.map((item, i) => {
+      const large = i % 3 === 1 ? ' gallery-large' : '';
+      return `<div class="gallery-item${large} reveal">
+        <img src="${item.src}" alt="Unknown FC" />
+        <div class="gallery-overlay"><i class="fas fa-expand"></i></div>
+      </div>`;
+    }).join('');
+  }
+
   // --- CONTACT ---
   const contactEl = document.getElementById('dynamic-contact');
   if (contactEl) {
@@ -291,7 +312,6 @@ document.getElementById('backToTop').addEventListener('click', () => {
 });
 
 // ---- LIGHTBOX ----
-const galleryItems = document.querySelectorAll('.gallery-item');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
 const lightboxClose = document.getElementById('lightboxClose');
@@ -301,9 +321,10 @@ const lightboxNext = document.getElementById('lightboxNext');
 let currentGalleryIndex = 0;
 const galleryImages = [];
 
-galleryItems.forEach((item, i) => {
+// Bind to dynamically rendered gallery items
+document.querySelectorAll('.gallery-item').forEach((item, i) => {
   const img = item.querySelector('img');
-  galleryImages.push({ src: img.src, alt: img.alt });
+  if (img) galleryImages.push({ src: img.src, alt: img.alt });
 
   item.addEventListener('click', () => {
     currentGalleryIndex = i;

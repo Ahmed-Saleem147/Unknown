@@ -80,6 +80,7 @@ function initDefaults() {
   if (!localStorage.getItem('ufc_squad'))    saveData('squad', DEFAULT_SQUAD);
   if (!localStorage.getItem('ufc_sponsors')) saveData('sponsors', DEFAULT_SPONSORS);
   if (!localStorage.getItem('ufc_settings')) saveData('settings', DEFAULT_SETTINGS);
+  if (!localStorage.getItem('ufc_gallery'))  saveData('gallery', DEFAULT_GALLERY);
   if (!localStorage.getItem('ufc_pw'))       localStorage.setItem('ufc_pw', DEFAULT_PASSWORD);
 }
 
@@ -189,6 +190,7 @@ function loadDashboard() {
   document.getElementById('stat-fixtures').textContent = getData('fixtures', []).length;
   document.getElementById('stat-squad').textContent    = getData('squad', []).length;
   document.getElementById('stat-sponsors').textContent = getData('sponsors', []).length;
+  document.getElementById('stat-gallery').textContent  = getData('gallery', DEFAULT_GALLERY).length;
 }
 
 // ============================================
@@ -199,6 +201,7 @@ function renderAll() {
   renderFixtures();
   renderSquad();
   renderSponsors();
+  renderGallery();
   loadSettings();
   loadDashboard();
 }
@@ -706,6 +709,96 @@ function deleteSponsor(id) {
   renderSponsors();
   loadDashboard();
   showToast('Sponsor removed.');
+}
+
+// ============================================
+// GALLERY
+// ============================================
+const DEFAULT_GALLERY = [
+  'photo1.jpeg','photo2.jpeg','photo3.jpeg','photo12.jpeg','photo13.jpeg',
+  'photo14.jpeg','photo4.jpeg','photo15.jpeg','photo16.jpeg','photo5.jpeg',
+  'photo17.jpeg','photo18.jpeg','photo6.jpeg','photo19.jpeg','photo20.jpeg',
+  'photo7.jpeg','photo21.jpeg','photo8.jpeg','photo22.jpeg','photo9.jpeg',
+  'photo10.jpeg','photo23.jpeg','photo11.jpeg'
+].map((src, i) => ({ id: i + 1, src }));
+
+function renderGallery() {
+  const gallery = getData('gallery', DEFAULT_GALLERY);
+  const grid = document.getElementById('galleryAdminGrid');
+  const empty = document.getElementById('galleryEmpty');
+  if (!grid) return;
+
+  if (gallery.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = gallery.map(item => `
+    <div class="gallery-admin-item">
+      <img src="${item.src}" alt="Gallery photo" />
+      <button class="gallery-delete-btn" onclick="deleteGalleryPhoto(${item.id})" title="Remove photo">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+function openAddPhoto() {
+  openModal('Add Photos', `
+    <form id="galleryFormEl">
+      <div class="form-group">
+        <label>Select Photos <span style="color:var(--grey);font-weight:400;">(you can pick multiple)</span></label>
+        <div class="photo-upload-area" id="galleryUploadArea" style="height:auto;min-height:120px;padding:20px;">
+          <div class="photo-placeholder" id="galleryPreviewWrap"><i class="fas fa-images"></i><span>Click to choose photos</span></div>
+          <input type="file" id="galleryFiles" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="save-btn"><i class="fas fa-upload"></i> Upload</button>
+      </div>
+    </form>
+  `);
+
+  // Preview selected files
+  document.getElementById('galleryFiles').addEventListener('change', function() {
+    const wrap = document.getElementById('galleryPreviewWrap');
+    const files = Array.from(this.files);
+    if (files.length === 0) return;
+    wrap.innerHTML = `<span style="color:var(--orange);font-weight:600;">${files.length} photo${files.length > 1 ? 's' : ''} selected</span>`;
+  });
+
+  document.getElementById('galleryFormEl').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('galleryFiles');
+    if (!input.files || input.files.length === 0) {
+      showToast('Please select at least one photo.', true);
+      return;
+    }
+    const gallery = getData('gallery', DEFAULT_GALLERY);
+    const reads = Array.from(input.files).map(file => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = ev => resolve({ id: Date.now() + Math.random(), src: ev.target.result });
+      reader.readAsDataURL(file);
+    }));
+    const newPhotos = await Promise.all(reads);
+    gallery.push(...newPhotos);
+    saveData('gallery', gallery);
+    closeModal();
+    renderGallery();
+    loadDashboard();
+    showToast(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added!`);
+  });
+}
+
+function deleteGalleryPhoto(id) {
+  if (!confirm('Remove this photo from the gallery?')) return;
+  const gallery = getData('gallery', DEFAULT_GALLERY).filter(p => p.id !== id);
+  saveData('gallery', gallery);
+  renderGallery();
+  loadDashboard();
+  showToast('Photo removed.');
 }
 
 // ============================================

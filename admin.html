@@ -46,6 +46,7 @@
         <a href="#" class="nav-item" data-section="fixtures"><i class="fas fa-futbol"></i> Fixtures</a>
         <a href="#" class="nav-item" data-section="squad"><i class="fas fa-users"></i> Squad</a>
         <a href="#" class="nav-item" data-section="sponsors"><i class="fas fa-handshake"></i> Sponsors</a>
+        <a href="#" class="nav-item" data-section="gallery"><i class="fas fa-images"></i> Gallery</a>
         <a href="#" class="nav-item" data-section="settings"><i class="fas fa-cog"></i> Settings</a>
       </nav>
       <a href="#" class="sidebar-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -111,6 +112,13 @@
             <div class="stat-info">
               <div class="stat-num" id="stat-sponsors">0</div>
               <div class="stat-label">Sponsors</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-images"></i></div>
+            <div class="stat-info">
+              <div class="stat-num" id="stat-gallery">0</div>
+              <div class="stat-label">Gallery Photos</div>
             </div>
           </div>
         </div>
@@ -200,6 +208,22 @@
           <button class="add-btn" onclick="openAddSponsor()"><i class="fas fa-plus"></i> Add Sponsor</button>
         </div>
         <div class="sponsors-admin-list" id="sponsorsList"></div>
+      </section>
+
+      <!-- ===== SECTION: GALLERY ===== -->
+      <section class="section" id="section-gallery">
+        <div class="section-header">
+          <div>
+            <h2>Gallery</h2>
+            <p>Upload and manage photos shown in the website gallery.</p>
+          </div>
+          <button class="add-btn" onclick="openAddPhoto()"><i class="fas fa-upload"></i> Add Photos</button>
+        </div>
+        <div class="gallery-admin-grid" id="galleryAdminGrid"></div>
+        <div class="empty-state" id="galleryEmpty" style="display:none;">
+          <i class="fas fa-images"></i>
+          <p>No photos yet. Upload your first one!</p>
+        </div>
       </section>
 
       <!-- ===== SECTION: SETTINGS ===== -->

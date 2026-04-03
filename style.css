@@ -756,70 +756,43 @@ img { max-width: 100%; display: block; }
 }
 .squad-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
 }
 
-/* ---- PLAYER ROWS (list style matching admin) ---- */
-.player-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* ---- PLAYER CARDS ---- */
+.player-card {
   background: var(--card);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 14px 20px;
+  border-radius: 16px;
+  padding: 28px 16px 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   transition: var(--transition);
   cursor: default;
 }
-.player-row:hover {
+.player-card:hover {
+  transform: translateY(-6px);
   border-color: rgba(255,106,0,0.4);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 20px var(--orange-glow);
   background: #181818;
-  transform: translateX(4px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3), -3px 0 0 var(--orange);
 }
-.player-row-num {
+.player-number {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
+  font-size: 2.8rem;
   color: var(--orange);
-  min-width: 30px;
   line-height: 1;
+  text-shadow: 0 0 20px var(--orange-glow);
 }
-.player-row-avatar {
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid rgba(255,106,0,0.3);
-  flex-shrink: 0;
-  transition: var(--transition);
-  background: rgba(255,255,255,0.03);
-}
-.player-row:hover .player-row-avatar {
-  border-color: var(--orange);
-  box-shadow: 0 0 12px var(--orange-glow);
-}
-.player-avatar-img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
-}
-.player-avatar-placeholder {
-  width: 100%; height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,106,0,0.06);
-  color: rgba(255,106,0,0.4);
-  font-size: 1.2rem;
-}
-.player-row-name {
+.player-info h4 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--white);
-  line-height: 1.3;
-  flex: 1;
+  line-height: 1.4;
 }
 .player-pos { display: none; }
 
@@ -1400,7 +1373,7 @@ img { max-width: 100%; display: block; }
   .content-col:last-child { grid-column: auto; }
 
   /* Squad */
-  .squad-grid { grid-template-columns: 1fr; gap: 8px; }
+  .squad-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
 
   /* Fixtures */
   .fixture-item {
@@ -1429,7 +1402,7 @@ img { max-width: 100%; display: block; }
   .hero-title { font-size: 4.5rem; }
   .features-grid { grid-template-columns: 1fr; }
   .gallery-grid { grid-template-columns: 1fr; grid-auto-rows: 240px; }
-  .squad-grid { grid-template-columns: 1fr; gap: 8px; }
+  .squad-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
 }
 
 

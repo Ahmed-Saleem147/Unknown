@@ -56,23 +56,15 @@
     const squad = getData('squad', DEFAULT_SQUAD);
     if (squad.length > 0) {
       squadEl.innerHTML = squad.map((p, i) => {
-        const hasPhoto = p.photo && p.photo.trim() !== '';
         const num = String(i + 1).padStart(2, '0');
-        return `<div class="player-row reveal">
-          <div class="player-row-num">${num}</div>
-          <div class="player-row-avatar">
-            ${hasPhoto
-              ? `<img src="${p.photo}" alt="${p.name}" class="player-avatar-img" />`
-              : `<div class="player-avatar-placeholder"><i class="fas fa-user"></i></div>`
-            }
+        return `<div class="player-card reveal">
+          <div class="player-number">${num}</div>
+          <div class="player-info">
+            <h4>${p.name}</h4>
+            <span class="player-pos">Player</span>
           </div>
-          <div class="player-row-name">${p.name}</div>
         </div>`;
       }).join('');
-      document.querySelectorAll('#dynamic-squad .reveal').forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-      });
     }
   }
 

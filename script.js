@@ -15,7 +15,13 @@
   // --- NEWS ---
   const newsEl = document.getElementById('dynamic-news');
   if (newsEl) {
-    const news = getData('news', []);
+    const DEFAULT_NEWS = [
+      { id:1, date:'2026-03-28', title:'Unknown FC Dominates in Latest 5-A-Side Tournament', excerpt:'The squad showed incredible form, with outstanding performances from multiple players across the pitch.' },
+      { id:2, date:'2026-03-15', title:'New Training Regime Kicks Off This Season', excerpt:'Coaching staff unveil new tactical approaches ahead of the upcoming fixtures and competitions.' },
+      { id:3, date:'2026-03-02', title:'Squad Photo Shoot — Behind The Scenes', excerpt:'Check out exclusive behind-the-scenes moments from our latest team photoshoot.' },
+      { id:4, date:'2026-02-18', title:'Unknown FC Officially on Instagram & TikTok', excerpt:'Follow us @unknownfcboys for exclusive content, match highlights and more.' },
+    ];
+    const news = getData('news', DEFAULT_NEWS);
     if (news.length > 0) {
       newsEl.innerHTML = news.slice(0, 4).map(n => {
         const d = new Date(n.date);
@@ -78,7 +84,13 @@
   // --- FIXTURES ---
   const fixEl = document.getElementById('dynamic-fixtures');
   if (fixEl) {
-    const fixtures = getData('fixtures', []);
+    const DEFAULT_FIXTURES = [
+      { id:1, day:'15', month:'APR', homeTeam:'Unknown FC', awayTeam:'Rivals XI',     time:'15:00 GMT', venue:'Home Ground', status:'upcoming', score:'' },
+      { id:2, day:'22', month:'APR', homeTeam:'City United', awayTeam:'Unknown FC',   time:'16:00 GMT', venue:'Away',        status:'upcoming', score:'' },
+      { id:3, day:'29', month:'APR', homeTeam:'Unknown FC', awayTeam:'Thunder Boys',  time:'14:30 GMT', venue:'Home Ground', status:'upcoming', score:'' },
+      { id:4, day:'28', month:'MAR', homeTeam:'Unknown FC', awayTeam:'East Side FC',  time:'Full Time', venue:'Home Ground', status:'win',      score:'3 - 1' },
+    ];
+    const fixtures = getData('fixtures', DEFAULT_FIXTURES);
     if (fixtures.length > 0) {
       fixEl.innerHTML = fixtures.map(f => {
         const isPast = f.status !== 'upcoming';
@@ -298,20 +310,30 @@ new Swiper('.sponsors-slider', {
 });
 
 // ---- SCROLL REVEAL ----
+function makeVisible(el) {
+  el.style.opacity = '';
+  el.style.transform = '';
+  el.classList.add('visible');
+}
+
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      // stagger siblings
-      const siblings = entry.target.parentElement.querySelectorAll('.reveal');
+      const siblings = entry.target.parentElement.querySelectorAll('.reveal:not(.visible)');
       siblings.forEach((el, i) => {
-        setTimeout(() => el.classList.add('visible'), i * 80);
+        setTimeout(() => makeVisible(el), i * 80);
       });
+      makeVisible(entry.target);
+      revealObserver.unobserve(entry.target);
     }
   });
-}, { threshold: 0.12 });
+}, { threshold: 0.08 });
 
-document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+function observeReveal() {
+  document.querySelectorAll('.reveal:not(.visible)').forEach(el => revealObserver.observe(el));
+}
+
+observeReveal();
 
 // ---- BACK TO TOP ----
 document.getElementById('backToTop').addEventListener('click', () => {

@@ -60,9 +60,10 @@ const DEFAULT_SETTINGS = {
 // ============================================
 // JSONBIN — CLOUD STORAGE
 // ============================================
-const BIN_ID  = '69d79ea4856a682189157ecc';
-const API_KEY = '$2a$10$mFthzZ19pT0VhpeaTHHuyunfhhSVek9Pl8rigpyH7tlCiSSkaGhl.';
-const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+const BIN_ID     = '69d79ea4856a682189157ecc';
+const READ_KEY   = '$2a$10$mFthzZ19pT0VhpeaTHHuyunfhhSVek9Pl8rigpyH7tlCiSSkaGhl.';
+const WRITE_KEY  = '$2a$10$YL3zUiyQZw5hR8T.tHF4yescWt4JlleD1K8/1WDbypqHQKD1iH.jm';
+const BIN_URL    = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
 let binData = {};
 
@@ -71,38 +72,50 @@ function getData(key, fallback) {
   return (val !== undefined && val !== null) ? val : fallback;
 }
 
-function saveData(key, val) {
+// Returns a promise — callers must await this
+async function saveData(key, val) {
   binData[key] = val;
-  // Push to cloud in background — UI updates instantly from binData
-  fetch(BIN_URL, {
+  const res = await fetch(BIN_URL, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': WRITE_KEY
+    },
     body: JSON.stringify(binData)
-  }).catch(() => showToast('Connection error — changes may not have saved online.', true));
+  });
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.status);
+    console.error('JSONBin save failed:', msg);
+    throw new Error('Save failed (' + res.status + ')');
+  }
 }
 
 async function fetchAndInitBin() {
   try {
-    const res = await fetch(BIN_URL, { headers: { 'X-Access-Key': API_KEY } });
+    const res = await fetch(BIN_URL, { headers: { 'X-Master-Key': WRITE_KEY } });
     if (res.ok) {
       const json = await res.json();
       binData = json.record || {};
     }
   } catch (e) { binData = {}; }
 
-  // Fill in any missing keys with defaults, then save
+  // Initialize any missing OR empty-array keys with defaults (first run)
   let needsSave = false;
-  if (!binData.news)     { binData.news     = DEFAULT_NEWS;     needsSave = true; }
-  if (!binData.fixtures) { binData.fixtures = DEFAULT_FIXTURES; needsSave = true; }
-  if (!binData.squad)    { binData.squad    = DEFAULT_SQUAD;    needsSave = true; }
-  if (!binData.sponsors) { binData.sponsors = DEFAULT_SPONSORS; needsSave = true; }
-  if (!binData.gallery)  { binData.gallery  = DEFAULT_GALLERY;  needsSave = true; }
-  if (!binData.settings) { binData.settings = DEFAULT_SETTINGS; needsSave = true; }
+  if (!binData._initialized) {
+    if (!binData.news     || binData.news.length     === 0) { binData.news     = DEFAULT_NEWS;     needsSave = true; }
+    if (!binData.fixtures || binData.fixtures.length === 0) { binData.fixtures = DEFAULT_FIXTURES; needsSave = true; }
+    if (!binData.squad    || binData.squad.length    === 0) { binData.squad    = DEFAULT_SQUAD;    needsSave = true; }
+    if (!binData.sponsors || binData.sponsors.length === 0) { binData.sponsors = DEFAULT_SPONSORS; needsSave = true; }
+    if (!binData.gallery  || binData.gallery.length  === 0) { binData.gallery  = DEFAULT_GALLERY;  needsSave = true; }
+    if (!binData.settings || Object.keys(binData.settings).length === 0) { binData.settings = DEFAULT_SETTINGS; needsSave = true; }
+    binData._initialized = true;
+    needsSave = true;
+  }
 
   if (needsSave) {
     await fetch(BIN_URL, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': WRITE_KEY },
       body: JSON.stringify(binData)
     });
   }
@@ -301,8 +314,10 @@ function newsForm(item) {
   `;
 }
 
-function submitNews(e, editId = null) {
+async function submitNews(e, editId = null) {
   e.preventDefault();
+  const btn = document.querySelector('#newsFormEl .save-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
   const news = getData('news', []);
   const item = {
     id: editId || Date.now(),
@@ -316,20 +331,21 @@ function submitNews(e, editId = null) {
   } else {
     news.unshift(item);
   }
-  saveData('news', news);
-  closeModal();
-  renderNews();
-  loadDashboard();
-  showToast(editId ? 'News article updated!' : 'News article added!');
+  try {
+    await saveData('news', news);
+    closeModal(); renderNews(); loadDashboard();
+    showToast(editId ? 'News article updated!' : 'News article added!');
+  } catch {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Article';
+    showToast('Failed to save — check connection.', true);
+  }
 }
 
-function deleteNews(id) {
+async function deleteNews(id) {
   if (!confirm('Delete this news article?')) return;
   const news = getData('news', []).filter(n => n.id !== id);
-  saveData('news', news);
-  renderNews();
-  loadDashboard();
-  showToast('News article deleted.');
+  try { await saveData('news', news); renderNews(); loadDashboard(); showToast('News article deleted.'); }
+  catch { showToast('Failed to delete — check connection.', true); }
 }
 
 // ============================================
@@ -445,8 +461,10 @@ function toggleScoreField() {
   scoreGroup.style.display = statusEl.value !== 'upcoming' ? 'block' : 'none';
 }
 
-function submitFixture(e, editId = null) {
+async function submitFixture(e, editId = null) {
   e.preventDefault();
+  const btn = document.querySelector('#fixtureFormEl .save-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
   const fixtures = getData('fixtures', []);
   const item = {
     id: editId || Date.now(),
@@ -465,20 +483,21 @@ function submitFixture(e, editId = null) {
   } else {
     fixtures.push(item);
   }
-  saveData('fixtures', fixtures);
-  closeModal();
-  renderFixtures();
-  loadDashboard();
-  showToast(editId ? 'Fixture updated!' : 'Fixture added!');
+  try {
+    await saveData('fixtures', fixtures);
+    closeModal(); renderFixtures(); loadDashboard();
+    showToast(editId ? 'Fixture updated!' : 'Fixture added!');
+  } catch {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Fixture';
+    showToast('Failed to save — check connection.', true);
+  }
 }
 
-function deleteFixture(id) {
+async function deleteFixture(id) {
   if (!confirm('Delete this fixture?')) return;
   const fixtures = getData('fixtures', []).filter(f => f.id !== id);
-  saveData('fixtures', fixtures);
-  renderFixtures();
-  loadDashboard();
-  showToast('Fixture deleted.');
+  try { await saveData('fixtures', fixtures); renderFixtures(); loadDashboard(); showToast('Fixture deleted.'); }
+  catch { showToast('Failed to delete — check connection.', true); }
 }
 
 // ============================================

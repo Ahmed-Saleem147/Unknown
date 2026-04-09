@@ -6,8 +6,8 @@
 // DYNAMIC CONTENT — fetched from JSONBin cloud
 // Changes made via admin.html reflect for ALL visitors
 // ============================================
-const BIN_URL = 'https://api.jsonbin.io/v3/b/69d79ea4856a682189157ecc';
-const API_KEY = '$2a$10$mFthzZ19pT0VhpeaTHHuyunfhhSVek9Pl8rigpyH7tlCiSSkaGhl.';
+const BIN_URL  = 'https://api.jsonbin.io/v3/b/69d79ea4856a682189157ecc';
+const API_KEY  = '$2a$10$YL3zUiyQZw5hR8T.tHF4yescWt4JlleD1K8/1WDbypqHQKD1iH.jm';
 
 const DEFAULT_NEWS = [
   { id:1, date:'2026-03-28', title:'Unknown FC Dominates in Latest 5-A-Side Tournament', excerpt:'The squad showed incredible form, with outstanding performances from multiple players across the pitch.' },
@@ -63,7 +63,7 @@ const DEFAULT_SPONSORS = [
 async function loadDynamicContent() {
   let d = {};
   try {
-    const res = await fetch(BIN_URL, { headers: { 'X-Access-Key': API_KEY } });
+    const res = await fetch(BIN_URL, { headers: { 'X-Master-Key': API_KEY } });
     if (res.ok) d = (await res.json()).record || {};
   } catch (e) { /* use defaults */ }
 

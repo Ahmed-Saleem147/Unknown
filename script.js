@@ -3,146 +3,151 @@
    ============================================ */
 
 // ============================================
-// DYNAMIC CONTENT — reads from localStorage
-// (managed via admin.html)
+// DYNAMIC CONTENT — fetched from JSONBin cloud
+// Changes made via admin.html reflect for ALL visitors
 // ============================================
-(function loadDynamicContent() {
-  function getData(key, fallback) {
-    try { const r = localStorage.getItem('ufc_' + key); return r ? JSON.parse(r) : fallback; }
-    catch { return fallback; }
-  }
+const BIN_URL = 'https://api.jsonbin.io/v3/b/69d79ea4856a682189157ecc';
+const API_KEY = '$2a$10$mFthzZ19pT0VhpeaTHHuyunfhhSVek9Pl8rigpyH7tlCiSSkaGhl.';
+
+const DEFAULT_NEWS = [
+  { id:1, date:'2026-03-28', title:'Unknown FC Dominates in Latest 5-A-Side Tournament', excerpt:'The squad showed incredible form, with outstanding performances from multiple players across the pitch.' },
+  { id:2, date:'2026-03-15', title:'New Training Regime Kicks Off This Season', excerpt:'Coaching staff unveil new tactical approaches ahead of the upcoming fixtures and competitions.' },
+  { id:3, date:'2026-03-02', title:'Squad Photo Shoot — Behind The Scenes', excerpt:'Check out exclusive behind-the-scenes moments from our latest team photoshoot.' },
+  { id:4, date:'2026-02-18', title:'Unknown FC Officially on Instagram & TikTok', excerpt:'Follow us @unknownfcboys for exclusive content, match highlights and more.' },
+];
+const DEFAULT_FIXTURES = [
+  { id:1, day:'15', month:'APR', homeTeam:'Unknown FC', awayTeam:'Rivals XI',    time:'15:00 GMT', venue:'Home Ground', status:'upcoming', score:'' },
+  { id:2, day:'22', month:'APR', homeTeam:'City United', awayTeam:'Unknown FC',  time:'16:00 GMT', venue:'Away',        status:'upcoming', score:'' },
+  { id:3, day:'29', month:'APR', homeTeam:'Unknown FC', awayTeam:'Thunder Boys', time:'14:30 GMT', venue:'Home Ground', status:'upcoming', score:'' },
+  { id:4, day:'28', month:'MAR', homeTeam:'Unknown FC', awayTeam:'East Side FC', time:'Full Time', venue:'Home Ground', status:'win',      score:'3 - 1' },
+];
+const DEFAULT_SQUAD = [
+  { id:1,  number:'01', name:'Andy Johnfiah',        position:'Player', photo:'' },
+  { id:2,  number:'02', name:'Lord Ayamga',           position:'Player', photo:'' },
+  { id:3,  number:'03', name:'Thomas Partey',         position:'Player', photo:'' },
+  { id:4,  number:'04', name:'Prince Bonney',         position:'Player', photo:'' },
+  { id:5,  number:'05', name:'Gilbert Selasi',        position:'Player', photo:'' },
+  { id:6,  number:'06', name:'André Lamar Ayebo',     position:'Player', photo:'' },
+  { id:7,  number:'07', name:'Asiedu Samuel',         position:'Player', photo:'' },
+  { id:8,  number:'08', name:'Divassa Amartey',       position:'Player', photo:'' },
+  { id:9,  number:'09', name:'Agala Derick Kwame',    position:'Player', photo:'' },
+  { id:10, number:'10', name:'Luqman Said',           position:'Player', photo:'' },
+  { id:11, number:'11', name:'Frank Arhin Issachar',  position:'Player', photo:'' },
+  { id:12, number:'12', name:'Abdul Sadat Smart',     position:'Player', photo:'' },
+  { id:13, number:'13', name:'Ahmed Saleem',          position:'Player', photo:'' },
+  { id:14, number:'14', name:'Godson Emmanuel',       position:'Player', photo:'' },
+  { id:15, number:'15', name:'Benjamin Nii Odai',     position:'Player', photo:'' },
+  { id:16, number:'16', name:'Kumi Francis',          position:'Player', photo:'' },
+  { id:17, number:'17', name:'Jakes Kyei',            position:'Player', photo:'' },
+  { id:18, number:'18', name:'Abdul Majeed Idrissa',  position:'Player', photo:'' },
+  { id:19, number:'19', name:'Lumor Drachma',         position:'Player', photo:'' },
+];
+const DEFAULT_GALLERY = [
+  'photo1.jpeg','photo2.jpeg','photo3.jpeg','photo12.jpeg','photo13.jpeg',
+  'photo14.jpeg','photo4.jpeg','photo15.jpeg','photo16.jpeg','photo5.jpeg',
+  'photo17.jpeg','photo18.jpeg','photo6.jpeg','photo19.jpeg','photo20.jpeg',
+  'photo7.jpeg','photo21.jpeg','photo8.jpeg','photo22.jpeg','photo9.jpeg',
+  'photo10.jpeg','photo23.jpeg','photo11.jpeg'
+].map((src, i) => ({ id: i + 1, src }));
+const DEFAULT_SETTINGS = {
+  phone1:'020 912 6842', phone2:'053 774 8210',
+  email:'unknownfootballclub7@gmail.com',
+  instagram:'unknownfcboys', tiktok:'unknownfcboys'
+};
+const DEFAULT_SPONSORS = [
+  { id:1, name:'Kenniz Travel & Tour' },
+  { id:2, name:'The 13th' },
+  { id:3, name:'Accra by Air' },
+];
+
+async function loadDynamicContent() {
+  let d = {};
+  try {
+    const res = await fetch(BIN_URL, { headers: { 'X-Access-Key': API_KEY } });
+    if (res.ok) d = (await res.json()).record || {};
+  } catch (e) { /* use defaults */ }
+
+  const news     = d.news     || DEFAULT_NEWS;
+  const squad    = d.squad    || DEFAULT_SQUAD;
+  const fixtures = d.fixtures || DEFAULT_FIXTURES;
+  const sponsors = d.sponsors || DEFAULT_SPONSORS;
+  const gallery  = d.gallery  || DEFAULT_GALLERY;
+  const s        = d.settings || DEFAULT_SETTINGS;
 
   // --- NEWS ---
   const newsEl = document.getElementById('dynamic-news');
-  if (newsEl) {
-    const DEFAULT_NEWS = [
-      { id:1, date:'2026-03-28', title:'Unknown FC Dominates in Latest 5-A-Side Tournament', excerpt:'The squad showed incredible form, with outstanding performances from multiple players across the pitch.' },
-      { id:2, date:'2026-03-15', title:'New Training Regime Kicks Off This Season', excerpt:'Coaching staff unveil new tactical approaches ahead of the upcoming fixtures and competitions.' },
-      { id:3, date:'2026-03-02', title:'Squad Photo Shoot — Behind The Scenes', excerpt:'Check out exclusive behind-the-scenes moments from our latest team photoshoot.' },
-      { id:4, date:'2026-02-18', title:'Unknown FC Officially on Instagram & TikTok', excerpt:'Follow us @unknownfcboys for exclusive content, match highlights and more.' },
-    ];
-    const news = getData('news', DEFAULT_NEWS);
-    if (news.length > 0) {
-      newsEl.innerHTML = news.slice(0, 4).map(n => {
-        const d = new Date(n.date);
-        const dateStr = isNaN(d) ? n.date : d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
-        return `<div class="news-item">
-          <div class="news-date"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
-          <h4><a href="#">${n.title}</a></h4>
-          <p>${n.excerpt}</p>
-        </div>`;
-      }).join('');
-    }
+  if (newsEl && news.length > 0) {
+    newsEl.innerHTML = news.slice(0, 4).map(n => {
+      const dt = new Date(n.date);
+      const dateStr = isNaN(dt) ? n.date : dt.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      return `<div class="news-item">
+        <div class="news-date"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
+        <h4><a href="#">${n.title}</a></h4>
+        <p>${n.excerpt}</p>
+      </div>`;
+    }).join('');
   }
 
   // --- SQUAD ---
   const squadEl = document.getElementById('dynamic-squad');
-  if (squadEl) {
-    const DEFAULT_SQUAD = [
-      { name: 'Andy Johnfiah',       photo: '' },
-      { name: 'Lord Ayamga',         photo: '' },
-      { name: 'Thomas Partey',       photo: '' },
-      { name: 'Prince Bonney',       photo: '' },
-      { name: 'Gilbert Selasi',      photo: '' },
-      { name: 'André Lamar Ayebo',   photo: '' },
-      { name: 'Asiedu Samuel',       photo: '' },
-      { name: 'Divassa Amartey',     photo: '' },
-      { name: 'Agala Derick Kwame',  photo: '' },
-      { name: 'Luqman Said',         photo: '' },
-      { name: 'Frank Arhin Issachar',photo: '' },
-      { name: 'Abdul Sadat Smart',   photo: '' },
-      { name: 'Ahmed Saleem',        photo: '' },
-      { name: 'Godson Emmanuel',     photo: '' },
-      { name: 'Benjamin Nii Odai',   photo: '' },
-      { name: 'Kumi Francis',        photo: '' },
-      { name: 'Jakes Kyei',          photo: '' },
-      { name: 'Abdul Majeed Idrissa',photo: '' },
-      { name: 'Lumor Drachma',       photo: '' },
-    ];
-    const squad = getData('squad', DEFAULT_SQUAD);
-    if (squad.length > 0) {
-      squadEl.innerHTML = squad.map((p, i) => {
-        const num = p.number || String(i + 1).padStart(2, '0');
-        const hasPhoto = p.photo && p.photo.trim() !== '';
-        return `<div class="player-card reveal">
-          <div class="player-num-badge">${num}</div>
-          <div class="player-avatar-wrap">
-            ${hasPhoto
-              ? `<img src="${p.photo}" alt="${p.name}" class="player-avatar-img" />`
-              : `<div class="player-avatar-placeholder"><i class="fas fa-user"></i></div>`
-            }
-          </div>
-          <div class="player-info">
-            <h4>${p.name}</h4>
-            <span class="player-pos">${p.position || 'Player'}</span>
-          </div>
-        </div>`;
-      }).join('');
-    }
+  if (squadEl && squad.length > 0) {
+    squadEl.innerHTML = squad.map((p, i) => {
+      const num = p.number || String(i + 1).padStart(2, '0');
+      const hasPhoto = p.photo && p.photo.trim() !== '';
+      return `<div class="player-card reveal">
+        <div class="player-num-badge">${num}</div>
+        <div class="player-avatar-wrap">
+          ${hasPhoto
+            ? `<img src="${p.photo}" alt="${p.name}" class="player-avatar-img" />`
+            : `<div class="player-avatar-placeholder"><i class="fas fa-user"></i></div>`
+          }
+        </div>
+        <div class="player-info">
+          <h4>${p.name}</h4>
+          <span class="player-pos">${p.position || 'Player'}</span>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   // --- FIXTURES ---
   const fixEl = document.getElementById('dynamic-fixtures');
-  if (fixEl) {
-    const DEFAULT_FIXTURES = [
-      { id:1, day:'15', month:'APR', homeTeam:'Unknown FC', awayTeam:'Rivals XI',     time:'15:00 GMT', venue:'Home Ground', status:'upcoming', score:'' },
-      { id:2, day:'22', month:'APR', homeTeam:'City United', awayTeam:'Unknown FC',   time:'16:00 GMT', venue:'Away',        status:'upcoming', score:'' },
-      { id:3, day:'29', month:'APR', homeTeam:'Unknown FC', awayTeam:'Thunder Boys',  time:'14:30 GMT', venue:'Home Ground', status:'upcoming', score:'' },
-      { id:4, day:'28', month:'MAR', homeTeam:'Unknown FC', awayTeam:'East Side FC',  time:'Full Time', venue:'Home Ground', status:'win',      score:'3 - 1' },
-    ];
-    const fixtures = getData('fixtures', DEFAULT_FIXTURES);
-    if (fixtures.length > 0) {
-      fixEl.innerHTML = fixtures.map(f => {
-        const isPast = f.status !== 'upcoming';
-        const vsClass = isPast ? 'fixture-vs score' : 'fixture-vs';
-        const vsContent = isPast && f.score ? f.score : 'VS';
-        const statusLabel = f.status === 'upcoming' ? 'Upcoming'
-          : f.status.charAt(0).toUpperCase() + f.status.slice(1);
-        return `<div class="fixture-item ${isPast ? 'past' : ''} reveal">
-          <div class="fixture-date">
-            <span class="fix-day">${f.day}</span>
-            <span class="fix-month">${f.month}</span>
-          </div>
-          <div class="fixture-teams">
-            <span class="home-team">${f.homeTeam}</span>
-            <div class="${vsClass}"><span>${vsContent}</span></div>
-            <span class="away-team">${f.awayTeam}</span>
-          </div>
-          <div class="fixture-info">
-            <span><i class="fas fa-clock"></i> ${f.time}</span>
-            <span><i class="fas fa-map-marker-alt"></i> ${f.venue}</span>
-          </div>
-          <div class="fixture-status ${f.status}">${statusLabel}</div>
-        </div>`;
-      }).join('');
-    }
+  if (fixEl && fixtures.length > 0) {
+    fixEl.innerHTML = fixtures.map(f => {
+      const isPast = f.status !== 'upcoming';
+      const vsContent = isPast && f.score ? f.score : 'VS';
+      const statusLabel = f.status === 'upcoming' ? 'Upcoming' : f.status.charAt(0).toUpperCase() + f.status.slice(1);
+      return `<div class="fixture-item ${isPast ? 'past' : ''} reveal">
+        <div class="fixture-date">
+          <span class="fix-day">${f.day}</span>
+          <span class="fix-month">${f.month}</span>
+        </div>
+        <div class="fixture-teams">
+          <span class="home-team">${f.homeTeam}</span>
+          <div class="fixture-vs${isPast ? ' score' : ''}"><span>${vsContent}</span></div>
+          <span class="away-team">${f.awayTeam}</span>
+        </div>
+        <div class="fixture-info">
+          <span><i class="fas fa-clock"></i> ${f.time}</span>
+          <span><i class="fas fa-map-marker-alt"></i> ${f.venue}</span>
+        </div>
+        <div class="fixture-status ${f.status}">${statusLabel}</div>
+      </div>`;
+    }).join('');
   }
 
   // --- SPONSORS ---
   const sponsorsEl = document.getElementById('dynamic-sponsors');
-  if (sponsorsEl) {
-    const sponsors = getData('sponsors', []);
-    if (sponsors.length > 0) {
-      // Duplicate for seamless loop
-      const doubled = [...sponsors, ...sponsors];
-      sponsorsEl.innerHTML = doubled.map(s =>
-        `<div class="swiper-slide sponsor-slide"><div class="sponsor-logo">${s.name}</div></div>`
-      ).join('');
-    }
+  if (sponsorsEl && sponsors.length > 0) {
+    const doubled = [...sponsors, ...sponsors];
+    sponsorsEl.innerHTML = doubled.map(sp =>
+      `<div class="swiper-slide sponsor-slide"><div class="sponsor-logo">${sp.name}</div></div>`
+    ).join('');
   }
 
   // --- GALLERY ---
   const galleryEl = document.getElementById('dynamic-gallery');
-  if (galleryEl) {
-    const DEFAULT_GALLERY = [
-      'photo1.jpeg','photo2.jpeg','photo3.jpeg','photo12.jpeg','photo13.jpeg',
-      'photo14.jpeg','photo4.jpeg','photo15.jpeg','photo16.jpeg','photo5.jpeg',
-      'photo17.jpeg','photo18.jpeg','photo6.jpeg','photo19.jpeg','photo20.jpeg',
-      'photo7.jpeg','photo21.jpeg','photo8.jpeg','photo22.jpeg','photo9.jpeg',
-      'photo10.jpeg','photo23.jpeg','photo11.jpeg'
-    ].map((src, i) => ({ id: i + 1, src }));
-
-    const gallery = getData('gallery', DEFAULT_GALLERY);
+  if (galleryEl && gallery.length > 0) {
     galleryEl.innerHTML = gallery.map((item, i) => {
       const large = i % 3 === 1 ? ' gallery-large' : '';
       return `<div class="gallery-item${large} reveal">
@@ -150,68 +155,53 @@
         <div class="gallery-overlay"><i class="fas fa-expand"></i></div>
       </div>`;
     }).join('');
+    // Rebind lightbox after gallery renders
+    bindGallery();
   }
 
   // --- CONTACT ---
   const contactEl = document.getElementById('dynamic-contact');
   if (contactEl) {
-    const s = getData('settings', {
-      phone1: '020 912 6842', phone2: '053 774 8210',
-      email: 'unknownfootballclub7@gmail.com',
-      instagram: 'unknownfcboys', tiktok: 'unknownfcboys'
-    });
     contactEl.innerHTML = `
       <h3>Reach Us Directly</h3>
       <div class="contact-item">
         <div class="contact-icon"><i class="fas fa-phone"></i></div>
-        <div>
-          <strong>Phone Numbers</strong>
-          <p>${s.phone1 || ''}</p>
-          <p>${s.phone2 || ''}</p>
-        </div>
+        <div><strong>Phone Numbers</strong><p>${s.phone1||''}</p><p>${s.phone2||''}</p></div>
       </div>
       ${s.email ? `<div class="contact-item">
         <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-        <div>
-          <strong>Email</strong>
-          <p><a href="mailto:${s.email}">${s.email}</a></p>
-        </div>
+        <div><strong>Email</strong><p><a href="mailto:${s.email}">${s.email}</a></p></div>
       </div>` : ''}
       <div class="contact-item">
         <div class="contact-icon"><i class="fab fa-instagram"></i></div>
-        <div>
-          <strong>Instagram</strong>
-          <p><a href="https://www.instagram.com/${s.instagram}" target="_blank">@${s.instagram}</a></p>
-        </div>
+        <div><strong>Instagram</strong><p><a href="https://www.instagram.com/${s.instagram}" target="_blank">@${s.instagram}</a></p></div>
       </div>
       <div class="contact-item">
         <div class="contact-icon"><i class="fab fa-tiktok"></i></div>
-        <div>
-          <strong>TikTok</strong>
-          <p><a href="https://www.tiktok.com/@${s.tiktok}" target="_blank">@${s.tiktok}</a></p>
-        </div>
+        <div><strong>TikTok</strong><p><a href="https://www.tiktok.com/@${s.tiktok}" target="_blank">@${s.tiktok}</a></p></div>
       </div>
       <div class="contact-socials">
         <a href="https://www.instagram.com/${s.instagram}" target="_blank" class="social-btn"><i class="fab fa-instagram"></i></a>
         <a href="https://www.tiktok.com/@${s.tiktok}" target="_blank" class="social-btn"><i class="fab fa-tiktok"></i></a>
-        <a href="mailto:${s.email || ''}" class="social-btn"><i class="fas fa-envelope"></i></a>
-        <a href="tel:${(s.phone1 || '').replace(/\s/g,'')}" class="social-btn"><i class="fas fa-phone"></i></a>
-      </div>
-    `;
-
-    // Update footer contact info too
+        <a href="mailto:${s.email||''}" class="social-btn"><i class="fas fa-envelope"></i></a>
+        <a href="tel:${(s.phone1||'').replace(/\s/g,'')}" class="social-btn"><i class="fas fa-phone"></i></a>
+      </div>`;
     const footerInfo = document.getElementById('footer-contact-info');
     if (footerInfo) {
       footerInfo.innerHTML = `
-        <p><i class="fas fa-phone"></i> ${s.phone1 || ''}</p>
-        <p><i class="fas fa-phone"></i> ${s.phone2 || ''}</p>
+        <p><i class="fas fa-phone"></i> ${s.phone1||''}</p>
+        <p><i class="fas fa-phone"></i> ${s.phone2||''}</p>
         ${s.email ? `<p><i class="fas fa-envelope"></i> ${s.email}</p>` : ''}
         <p><i class="fab fa-instagram"></i> @${s.instagram}</p>
-        <p><i class="fab fa-tiktok"></i> @${s.tiktok}</p>
-      `;
+        <p><i class="fab fa-tiktok"></i> @${s.tiktok}</p>`;
     }
   }
-})();
+
+  // Re-run reveal observer on dynamically injected elements
+  observeReveal();
+}
+
+loadDynamicContent();
 
 // ---- NAVBAR: Solid on scroll ----
 const navbar = document.getElementById('navbar');
@@ -348,18 +338,19 @@ const lightboxPrev = document.getElementById('lightboxPrev');
 const lightboxNext = document.getElementById('lightboxNext');
 
 let currentGalleryIndex = 0;
-const galleryImages = [];
+let galleryImages = [];
 
-// Bind to dynamically rendered gallery items
-document.querySelectorAll('.gallery-item').forEach((item, i) => {
-  const img = item.querySelector('img');
-  if (img) galleryImages.push({ src: img.src, alt: img.alt });
-
-  item.addEventListener('click', () => {
-    currentGalleryIndex = i;
-    openLightbox(i);
+function bindGallery() {
+  galleryImages = [];
+  document.querySelectorAll('.gallery-item').forEach((item, i) => {
+    const img = item.querySelector('img');
+    if (img) galleryImages.push({ src: img.src, alt: img.alt });
+    item.addEventListener('click', () => {
+      currentGalleryIndex = i;
+      openLightbox(i);
+    });
   });
-});
+}
 
 function openLightbox(index) {
   lightboxImg.src = galleryImages[index].src;

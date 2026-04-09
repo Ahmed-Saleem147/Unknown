@@ -58,30 +58,57 @@ const DEFAULT_SETTINGS = {
 };
 
 // ============================================
-// DATA ACCESS
+// JSONBIN — CLOUD STORAGE
 // ============================================
+const BIN_ID  = '69d79ea4856a682189157ecc';
+const API_KEY = '$2a$10$mFthzZ19pT0VhpeaTHHuyunfhhSVek9Pl8rigpyH7tlCiSSkaGhl.';
+const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+
+let binData = {};
+
 function getData(key, fallback) {
-  try {
-    const raw = localStorage.getItem('ufc_' + key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch { return fallback; }
+  const val = binData[key];
+  return (val !== undefined && val !== null) ? val : fallback;
 }
+
 function saveData(key, val) {
-  localStorage.setItem('ufc_' + key, JSON.stringify(val));
+  binData[key] = val;
+  // Push to cloud in background — UI updates instantly from binData
+  fetch(BIN_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+    body: JSON.stringify(binData)
+  }).catch(() => showToast('Connection error — changes may not have saved online.', true));
 }
-function initDefaults() {
-  // Reset squad to new defaults (clear old photo references)
-  if (!localStorage.getItem('ufc_squad_v2')) {
-    saveData('squad', DEFAULT_SQUAD);
-    localStorage.setItem('ufc_squad_v2', '1');
+
+async function fetchAndInitBin() {
+  try {
+    const res = await fetch(BIN_URL, { headers: { 'X-Access-Key': API_KEY } });
+    if (res.ok) {
+      const json = await res.json();
+      binData = json.record || {};
+    }
+  } catch (e) { binData = {}; }
+
+  // Fill in any missing keys with defaults, then save
+  let needsSave = false;
+  if (!binData.news)     { binData.news     = DEFAULT_NEWS;     needsSave = true; }
+  if (!binData.fixtures) { binData.fixtures = DEFAULT_FIXTURES; needsSave = true; }
+  if (!binData.squad)    { binData.squad    = DEFAULT_SQUAD;    needsSave = true; }
+  if (!binData.sponsors) { binData.sponsors = DEFAULT_SPONSORS; needsSave = true; }
+  if (!binData.gallery)  { binData.gallery  = DEFAULT_GALLERY;  needsSave = true; }
+  if (!binData.settings) { binData.settings = DEFAULT_SETTINGS; needsSave = true; }
+
+  if (needsSave) {
+    await fetch(BIN_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+      body: JSON.stringify(binData)
+    });
   }
-  if (!localStorage.getItem('ufc_news'))     saveData('news', DEFAULT_NEWS);
-  if (!localStorage.getItem('ufc_fixtures')) saveData('fixtures', DEFAULT_FIXTURES);
-  if (!localStorage.getItem('ufc_squad'))    saveData('squad', DEFAULT_SQUAD);
-  if (!localStorage.getItem('ufc_sponsors')) saveData('sponsors', DEFAULT_SPONSORS);
-  if (!localStorage.getItem('ufc_settings')) saveData('settings', DEFAULT_SETTINGS);
-  if (!localStorage.getItem('ufc_gallery'))  saveData('gallery', DEFAULT_GALLERY);
-  if (!localStorage.getItem('ufc_pw'))       localStorage.setItem('ufc_pw', DEFAULT_PASSWORD);
+
+  // Password stays local only
+  if (!localStorage.getItem('ufc_pw')) localStorage.setItem('ufc_pw', DEFAULT_PASSWORD);
 }
 
 // ============================================
@@ -118,9 +145,12 @@ loginForm.addEventListener('submit', (e) => {
 
 logoutBtn.addEventListener('click', (e) => { e.preventDefault(); logout(); });
 
-function showAdmin() {
+async function showAdmin() {
   loginScreen.style.display = 'none';
   adminWrap.style.display = 'flex';
+  // Show loading state
+  document.getElementById('topbarTitle').textContent = 'Loading...';
+  await fetchAndInitBin();
   loadDashboard();
   renderAll();
 }
@@ -863,7 +893,6 @@ function formatDate(dateStr) {
 // ============================================
 // INIT
 // ============================================
-initDefaults();
 if (isLoggedIn()) {
   showAdmin();
 } else {

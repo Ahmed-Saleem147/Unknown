@@ -533,27 +533,43 @@ function renderSquad() {
   }).join('');
 }
 
-// Compress image to JPEG, max 400px wide, quality 0.65 — keeps base64 small enough for JSONBin
-function readPhotoFile(inputId) {
-  return new Promise((resolve) => {
-    const input = document.getElementById(inputId);
-    if (!input || !input.files || !input.files[0]) { resolve(null); return; }
+// Upload photo to ImgBB — returns permanent public URL (not base64)
+const IMGBB_KEY = '584bc4a7e3cb42bb086ba95322c787eb';
+
+async function readPhotoFile(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input || !input.files || !input.files[0]) return null;
+
+  // Compress first to speed up upload
+  const base64 = await new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const MAX = 400;
+        const MAX = 600;
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.65));
+        // Strip the data:image/...;base64, prefix for ImgBB
+        resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(input.files[0]);
   });
+
+  // Upload to ImgBB
+  const form = new FormData();
+  form.append('image', base64);
+  const res = await fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, {
+    method: 'POST',
+    body: form
+  });
+  if (!res.ok) throw new Error('ImgBB upload failed');
+  const data = await res.json();
+  return data.data.url; // permanent public URL
 }
 
 function playerFormHTML(player) {
@@ -591,7 +607,7 @@ function playerFormHTML(player) {
   `;
 }
 
-// Live preview when photo selected
+// Live preview when photo selected (local preview only — actual upload happens on save)
 function bindPhotoPreview() {
   const fileInput = document.getElementById('pPhotoFile');
   if (!fileInput) return;
@@ -603,7 +619,6 @@ function bindPhotoPreview() {
       if (preview.tagName === 'IMG') {
         preview.src = e.target.result;
       } else {
-        // Replace placeholder div with img
         const img = document.createElement('img');
         img.src = e.target.result;
         img.className = 'photo-preview';
@@ -689,7 +704,7 @@ function editPlayer(id) {
       showToast('Player updated! Photo saved to cloud.');
     } catch {
       btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-      showToast('Failed to save — photo may be too large. Try a smaller image.', true);
+      showToast('Failed to save — check your internet connection and try again.', true);
     }
   });
 }

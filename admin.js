@@ -533,13 +533,25 @@ function renderSquad() {
   }).join('');
 }
 
-// Shared photo input handler — returns base64 via promise
+// Compress image to JPEG, max 400px wide, quality 0.65 — keeps base64 small enough for JSONBin
 function readPhotoFile(inputId) {
   return new Promise((resolve) => {
     const input = document.getElementById(inputId);
     if (!input || !input.files || !input.files[0]) { resolve(null); return; }
     const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 400;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.src = e.target.result;
+    };
     reader.readAsDataURL(input.files[0]);
   });
 }
@@ -626,6 +638,8 @@ function openAddPlayer() {
   bindPhotoPreview();
   document.getElementById('playerFormEl').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = document.querySelector('#playerFormEl .save-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     const photoData = await readPhotoFile('pPhotoFile');
     const squad = getData('squad', []);
     squad.push({
@@ -635,11 +649,14 @@ function openAddPlayer() {
       position: document.getElementById('pPos').value.trim() || 'Player',
       photo: photoData || '',
     });
-    saveData('squad', squad);
-    closeModal();
-    renderSquad();
-    loadDashboard();
-    showToast('Player added!');
+    try {
+      await saveData('squad', squad);
+      closeModal(); renderSquad(); loadDashboard();
+      showToast('Player added! Photo saved to cloud.');
+    } catch {
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Add Player';
+      showToast('Failed to save — check connection.', true);
+    }
   });
 }
 
@@ -651,6 +668,8 @@ function editPlayer(id) {
   bindPhotoPreview();
   document.getElementById('playerFormEl').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = document.querySelector('#playerFormEl .save-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     const area = document.getElementById('photoUploadArea');
     const cleared = area && area.dataset.cleared === 'true';
     const newPhotoData = await readPhotoFile('pPhotoFile');
@@ -664,20 +683,22 @@ function editPlayer(id) {
         photo: newPhotoData ? newPhotoData : (cleared ? '' : squad[idx].photo),
       };
     }
-    saveData('squad', squad);
-    closeModal();
-    renderSquad();
-    showToast('Player updated!');
+    try {
+      await saveData('squad', squad);
+      closeModal(); renderSquad();
+      showToast('Player updated! Photo saved to cloud.');
+    } catch {
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+      showToast('Failed to save — photo may be too large. Try a smaller image.', true);
+    }
   });
 }
 
-function deletePlayer(id) {
+async function deletePlayer(id) {
   if (!confirm('Remove this player from the squad?')) return;
   const squad = getData('squad', []).filter(p => p.id !== id);
-  saveData('squad', squad);
-  renderSquad();
-  loadDashboard();
-  showToast('Player removed.');
+  try { await saveData('squad', squad); renderSquad(); loadDashboard(); showToast('Player removed.'); }
+  catch { showToast('Failed to remove — check connection.', true); }
 }
 
 // ============================================

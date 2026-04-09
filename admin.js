@@ -112,6 +112,23 @@ async function fetchAndInitBin() {
     needsSave = true;
   }
 
+  // Strip any leftover base64 from squad photos (migrate to ImgBB URLs only)
+  let stripped = false;
+  if (binData.squad) {
+    binData.squad = binData.squad.map(p => {
+      if (p.photo && p.photo.startsWith('data:')) { stripped = true; return { ...p, photo: '' }; }
+      return p;
+    });
+  }
+  // Strip base64 from gallery too
+  if (binData.gallery) {
+    binData.gallery = binData.gallery.filter(item => {
+      if (item.src && item.src.startsWith('data:')) { stripped = true; return false; }
+      return true;
+    });
+  }
+  if (stripped) needsSave = true;
+
   if (needsSave) {
     await fetch(BIN_URL, {
       method: 'PUT',
@@ -861,29 +878,72 @@ function openAddPhoto() {
       showToast('Please select at least one photo.', true);
       return;
     }
-    const gallery = getData('gallery', DEFAULT_GALLERY);
-    const reads = Array.from(input.files).map(file => new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = ev => resolve({ id: Date.now() + Math.random(), src: ev.target.result });
-      reader.readAsDataURL(file);
-    }));
-    const newPhotos = await Promise.all(reads);
-    gallery.push(...newPhotos);
-    saveData('gallery', gallery);
-    closeModal();
-    renderGallery();
-    loadDashboard();
-    showToast(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added!`);
+    const btn = document.querySelector('#galleryFormEl .save-btn');
+    btn.disabled = true;
+    const files = Array.from(input.files);
+
+    // Upload each photo to ImgBB — get back public URLs
+    const newPhotos = [];
+    for (let i = 0; i < files.length; i++) {
+      btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading ${i+1}/${files.length}...`;
+      try {
+        const url = await uploadToImgBB(files[i]);
+        newPhotos.push({ id: Date.now() + Math.random(), src: url });
+      } catch {
+        showToast(`Photo ${i+1} failed to upload — skipped.`, true);
+      }
+    }
+
+    if (newPhotos.length === 0) {
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Upload';
+      return;
+    }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    try {
+      const gallery = getData('gallery', DEFAULT_GALLERY);
+      gallery.push(...newPhotos);
+      await saveData('gallery', gallery);
+      closeModal(); renderGallery(); loadDashboard();
+      showToast(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added!`);
+    } catch {
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Upload';
+      showToast('Failed to save — check connection.', true);
+    }
   });
 }
 
-function deleteGalleryPhoto(id) {
+// Helper: upload a File object to ImgBB, return URL
+async function uploadToImgBB(file) {
+  const base64 = await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  const form = new FormData();
+  form.append('image', base64);
+  const res = await fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, { method: 'POST', body: form });
+  if (!res.ok) throw new Error('ImgBB failed');
+  return (await res.json()).data.url;
+}
+
+async function deleteGalleryPhoto(id) {
   if (!confirm('Remove this photo from the gallery?')) return;
   const gallery = getData('gallery', DEFAULT_GALLERY).filter(p => p.id !== id);
-  saveData('gallery', gallery);
-  renderGallery();
-  loadDashboard();
-  showToast('Photo removed.');
+  try { await saveData('gallery', gallery); renderGallery(); loadDashboard(); showToast('Photo removed.'); }
+  catch { showToast('Failed to remove — check connection.', true); }
 }
 
 // ============================================

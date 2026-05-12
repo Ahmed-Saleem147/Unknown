@@ -277,8 +277,6 @@ async function loadDynamicContent() {
   }
 }
 
-loadDynamicContent();
-
 // ---- NAVBAR: Solid on scroll ----
 const navbar = document.getElementById('navbar');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -515,3 +513,6 @@ if (ctaSection) {
 })();
 
 console.log('%c⚽ UNKNOWN FC — We Live This Game', 'color:#ff6a00;font-size:18px;font-weight:bold;font-family:monospace;');
+
+// Must run after ALL variable declarations above (galleryImages etc.)
+loadDynamicContent();

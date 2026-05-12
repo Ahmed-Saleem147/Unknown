@@ -247,18 +247,32 @@ async function loadDynamicContent() {
   }
 
   // 2. Always fetch fresh data from JSONBin
-  try {
+  const fetchFresh = async () => {
     const res = await fetch(BIN_URL, { headers: { 'X-Master-Key': API_KEY } });
-    if (res.ok) {
-      const fresh = (await res.json()).record || {};
+    if (!res.ok) throw new Error('JSONBin returned ' + res.status);
+    return (await res.json()).record || {};
+  };
+
+  try {
+    const fresh = await fetchFresh();
+    localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
+    localStorage.setItem(CACHE_TS, String(Date.now()));
+    renderAll(fresh);
+  } catch (e) {
+    console.error('JSONBin fetch failed:', e.message);
+    // Retry once after 2 seconds
+    try {
+      await new Promise(r => setTimeout(r, 2000));
+      const fresh = await fetchFresh();
       localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
       localStorage.setItem(CACHE_TS, String(Date.now()));
-      renderAll(fresh); // always update with live data
-    }
-  } catch (e) {
-    // Network failed — if we have ANY cache, use it regardless of age
-    if (cached && cacheAge >= CACHE_TTL) {
-      try { renderAll(JSON.parse(cached)); } catch (e2) {}
+      renderAll(fresh);
+    } catch (e2) {
+      console.error('JSONBin retry also failed:', e2.message);
+      // Fall back to whatever cache we have
+      if (cached) {
+        try { renderAll(JSON.parse(cached)); } catch (e3) {}
+      }
     }
   }
 }
